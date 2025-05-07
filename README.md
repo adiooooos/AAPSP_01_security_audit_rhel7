@@ -8,6 +8,7 @@
 Welcome to the **RHEL 7 Security Audit Automation**! This powerful Ansible Playbook automates security audits for RHEL 7 servers, aligning with Linux best practices and industry compliance standards like **CIS** and **NIST**. Say goodbye to manual checks and hello to streamlined, secure operations! 🌟
 
 #### See It in Action! 📸
+![image](https://github.com/user-attachments/assets/c662512c-d4f0-4829-b51b-93cebd82fc8c)
 
 
 ---
