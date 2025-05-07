@@ -2,67 +2,33 @@
 
 Empower Your RHEL 7 Security with Automation 🚀
 
-
-
 A powerful Ansible Playbook designed to automate security audits for RHEL 7 servers, aligning with Linux best practices and industry compliance standards (CIS/NIST). Secure, efficient, and hassle-free! ✨
 
 🎉 What It Looks Like
-
-Check out the results in action:
-
-
-
+![image](https://github.com/user-attachments/assets/0523d55f-d270-445e-bab3-f53b42a6932f)
 
 🌟 Key Features
-
-
-
-
-
 ✅ System Insights: Collects core system info (IP, Hostname) effortlessly.
-
-
 
 🔐 11 Critical Security Checks:
 
-
-
-
-
 SSH Root login restrictions
-
-
 
 Password complexity policy validation
 
-
-
 System log service monitoring
-
-
 
 Firewall status verification
 
-
-
 Key file permission audits
 
-
-
 SELinux enforcing mode validation
-
-
 
 SSH public key authentication checks
 
 
-
 📧 Automated Reporting: Generates sleek HTML reports and sends them via email.
-
-
-
 ⚙️ SMTP Integration: Supports Gmail and extensible to other email providers.
-
 
 
 🚀 Quick Start Guide
