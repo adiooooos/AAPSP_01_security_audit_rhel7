@@ -85,46 +85,46 @@
     </style>
 </head>
 <body>
-    <h1>RHEL 安全审计报告</h1>
+    <h1>RHEL Security Audit Report</h1>
     <table>
         <tr>
-            <th>审计项目</th>
-            <th>审计结果</th>
+            <th>Audit Item</th>
+            <th>Audit Result</th>
         </tr>
         <tr>
-            <td class="audit-item">IP地址</td>
+            <td class="audit-item">IP Address</td>
             <td class="audit-result">{{ audit_results.ip }}</td>
         </tr>
         <tr>
-            <td class="audit-item">主机名</td>
+            <td class="audit-item">Hostname</td>
             <td class="audit-result">{{ audit_results.hostname }}</td>
         </tr>
         <tr>
-            <td class="audit-item">Root登录</td>
+            <td class="audit-item">Root Login</td>
             <td class="audit-result {% if audit_results.root_login == 'enabled (issue)' %}fail{% endif %}">{{ audit_results.root_login }}</td>
         </tr>
         <tr>
-            <td class="audit-item">密码策略</td>
+            <td class="audit-item">Password Policy</td>
             <td class="audit-result {% if 'not configured' in audit_results.password_policy %}fail{% endif %}">{{ audit_results.password_policy }}</td>
         </tr>
         <tr>
-            <td class="audit-item">系统日志状态</td>
+            <td class="audit-item">System Log Status</td>
             <td class="audit-result {% if audit_results.syslog == 'not running (issue)' %}fail{% endif %}">{{ audit_results.syslog }}</td>
         </tr>
         <tr>
-            <td class="audit-item">防火墙状态</td>
+            <td class="audit-item">Firewall Status</td>
             <td class="audit-result {% if audit_results.firewall == 'not enabled (issue)' %}fail{% endif %}">{{ audit_results.firewall }}</td>
         </tr>
         <tr>
-            <td class="audit-item">文件权限</td>
+            <td class="audit-item">File Permissions</td>
             <td class="audit-result {% if 'incorrect' in audit_results.passwd_permissions %}fail{% endif %}">{{ audit_results.passwd_permissions }}</td>
         </tr>
         <tr>
-            <td class="audit-item">SELinux状态</td>
+            <td class="audit-item">SELinux Status</td>
             <td class="audit-result {% if audit_results.selinux == 'not enabled (issue)' %}fail{% endif %}">{{ audit_results.selinux }}</td>
         </tr>
         <tr>
-            <td class="audit-item">SSH密钥认证</td>
+            <td class="audit-item">SSH Key Authentication</td>
             <td class="audit-result {% if audit_results.ssh_pubkey_auth == 'not enabled (issue)' %}fail{% endif %}">{{ audit_results.ssh_pubkey_auth }}</td>
         </tr>
     </table>
