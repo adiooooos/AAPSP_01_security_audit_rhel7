@@ -1,0 +1,179 @@
+- name: RHEL 7 Security Audit
+  hosts: rhel7
+  gather_facts: true  # Automatically collect basic information from target hosts
+  become: yes         # Execute tasks requiring root privileges in privileged mode
+
+  vars:
+    # Define a variable to store audit results
+    audit_results: {}
+    # Email server configuration parameters
+    mail_host: "smtp.gmail.com"
+    mail_port: "465"  # SSL secure port
+    sender_username: "fzhang@redhat.com"
+    sender_password: "bobxxwwwwewewewewepm"  # Example password, recommended to encrypt in production
+    mail_to:
+      - "fzhang@redhat.com"
+    email_subject: "RHEL 7 Security Audit report"
+
+  tasks:
+    # [Basic Information Collection]------------------------------
+    # 1. Collect IP and hostname
+    - name: Collect IP and hostname
+      ansible.builtin.set_fact:
+        audit_results: "{{ audit_results | combine({'ip': ansible_default_ipv4.address, 'hostname': ansible_hostname}) }}"
+      when: ansible_default_ipv4 is defined  # Execute only when a valid IPv4 address is detected
+
+    # 2. Print IP and hostname (for debugging)
+    - name: Debug IP and hostname
+      ansible.builtin.debug:
+        msg: |
+          IP: {{ hostvars[inventory_hostname]['audit_results']['ip'] }}
+          Hostname: {{ hostvars[inventory_hostname]['audit_results']['hostname'] }}
+
+    # [Security Configuration Checks]------------------------------
+    # 3. Check SSH root login permissions (CIS security baseline requirement)
+    - name: Check if root user can log in directly
+      ansible.builtin.command: grep '^PermitRootLogin no' /etc/ssh/sshd_config
+      register: root_login_check  # Register command execution result
+      ignore_errors: true         # Allow task to fail without interrupting overall execution
+    
+    - name: Report root login status
+      ansible.builtin.set_fact:
+        audit_results: "{{ audit_results | combine({'root_login': 'disabled'}) }}"
+      when: root_login_check.rc == 0  # Return code 0 indicates successful match
+    
+    - name: Report root login issue
+      ansible.builtin.set_fact:
+        audit_results: "{{ audit_results | combine({'root_login': 'enabled (issue)'}) }}"
+      when: root_login_check.rc != 0  # Non-zero return code indicates no match found
+
+    # 4. Password complexity policy check (NIST security standard)
+    - name: Check password policy (minlen)
+      ansible.builtin.command: grep '^minlen' /etc/security/pwquality.conf
+      register: minlen_check
+      ignore_errors: true
+    
+    - name: Report password policy
+      ansible.builtin.set_fact:
+        audit_results: "{{ audit_results | combine({'password_policy': minlen_check.stdout}) }}"
+      when: minlen_check.rc == 0
+    
+    - name: Report password policy issue
+      ansible.builtin.set_fact:
+        audit_results: "{{ audit_results | combine({'password_policy': 'not configured (issue)'}) }}"
+      when: minlen_check.rc != 0
+
+    # 5. System log service status check (PCI DSS requirement)
+    - name: Check if syslog is running
+      ansible.builtin.systemd:
+        name: rsyslog
+        state: started
+      register: syslog_check
+    
+    - name: Report syslog status
+      ansible.builtin.set_fact:
+        audit_results: "{{ audit_results | combine({'syslog': 'running'}) }}"
+      when: syslog_check.status.ActiveState == "active"
+    
+    - name: Report syslog issue
+      ansible.builtin.set_fact:
+        audit_results: "{{ audit_results | combine({'syslog': 'not running (issue)'}) }}"
+      when: syslog_check.status.ActiveState != "active"
+
+    # 6. Firewall status check (basic protection)
+    - name: Check if firewalld is enabled
+      ansible.builtin.systemd:
+        name: firewalld
+        state: started
+      register: firewall_check
+    
+    - name: Report firewall status
+      ansible.builtin.set_fact:
+        audit_results: "{{ audit_results | combine({'firewall': 'enabled'}) }}"
+      when: firewall_check.status.ActiveState == "active"
+    
+    - name: Report firewall issue
+      ansible.builtin.set_fact:
+        audit_results: "{{ audit_results | combine({'firewall': 'not enabled (issue)'}) }}"
+      when: firewall_check.status.ActiveState != "active"
+
+    # 7. Key file permission check (CIS benchmark)
+    - name: Check /etc/passwd permissions
+      ansible.builtin.stat:
+        path: /etc/passwd
+      register: passwd_perm
+    
+    - name: Report /etc/passwd permissions
+      ansible.builtin.set_fact:
+        audit_results: "{{ audit_results | combine({'passwd_permissions': passwd_perm.stat.mode}) }}"
+      when: passwd_perm.stat.mode | int == 644  # Convert string to integer for comparison
+    
+    - name: Report /etc/passwd permission issue
+      ansible.builtin.set_fact:
+        audit_results: "{{ audit_results | combine({'passwd_permissions': 'incorrect (issue)'}) }}"
+      when:湿度: passwd_perm.stat.mode | int != 644
+
+    # 8. SELinux security module status (Mandatory Access Control)
+    - name: Check SELinux status
+      ansible.builtin.command: getenforce
+      register: selinux_status
+      ignore_errors: true  # Handle cases where SELinux is not installed
+    
+    - name: Report SELinux status
+      ansible.builtin.set_fact:
+        audit_results: "{{ audit_results | combine({'selinux': selinux_status.stdout}) }}"
+      when: selinux_status.rc == 0
+    
+    - name: Report SELinux issue
+      ansible.builtin.set_fact:
+        audit_results: "{{ audit_results | combine({'selinux': 'not enabled (issue)'}) }}"
+      when: selinux_status.rc != 0
+
+    # 9. SSH public key authentication check (best practice)
+    - name: Check SSH public key authentication
+      ansible.builtin.command: grep '^PubkeyAuthentication yes' /etc/ssh/sshd_config
+      register: ssh_pubkey_check
+      ignore_errors: true
+    
+    - name: Report SSH pubkey auth status
+      ansible.builtin.set_fact:
+        audit_results: "{{ audit_results | combine({'ssh_pubkey_auth': 'enabled'}) }}"
+      when: ssh_pubkey_check.rc == 0
+    
+    - name: Report SSH pubkey auth issue
+      ansible.builtin.set_fact:
+        audit_results: "{{ audit_results | combine({'ssh_pubkey_auth': 'not enabled (issue)'}) }}"
+      when: ssh_pubkey_check.rc != 0
+
+    # [Result Processing]------------------------------
+
+    # 10. Display complete audit results (for debugging)
+    - name: List audit results
+      ansible.builtin.debug:
+        var: audit_results  # Display complete audit results in the console
+
+    # 11. Report generation and email module
+    # Generate HTML report with timestamp (requires audit_report.html.j2 template file)
+    - name: Generate HTML report with timestamp
+      template:
+        src: audit_report.html.j2
+        dest: "/tmp/audit_report_{{ lookup('pipe', 'date +%Y%m%d%H%M%S') }}.html"
+      register: html_report_path  # Store the path of the generated file
+    
+    # Debug output for generated file path
+    - name: Debug the generated HTML report path
+      ansible.builtin.debug:
+        msg: "Generated HTML report path: {{ html_report_path.dest }}"  # Confirm file generation location
+    
+    # Send HTML email via SSL (requires community.general collection)
+    - name: Send email with HTML report
+      community.general.mail:
+        host: "{{ mail_host }}"
+        port: "{{ mail_port }}"
+        username: "{{ sender_username }}"
+        password: "{{ sender_password }}"
+        from: "{{ sender_username }}"
+        to: "{{ mail_to }}"
+        subject: "{{ email_subject }}"
+        body: "{{ lookup('template', 'audit_report.html.j2') }}"  # Render template content directly into email body
+        subtype: html  # Specify email content type as HTML format
